@@ -1,56 +1,46 @@
 # Day 12 — AI SDLC: Quán Ăn Chợ Nổi
 
-> **Làm theo nhóm 4–6 người** · Dùng AI để xây game 2D qua **4 phase** trong **3 giờ**: Út Sen lặn bắt cá, hái rau trên mặt nước rồi tối mở quán phục vụ khách.
-> **Yêu cầu từng phase mở đúng mốc giờ tại lab board:** **[Chợ Nổi Lab](https://claude.ai/artifact/E35v787wSx2wDgPTNhMVDg)** (cần đăng nhập claude.ai; có trợ giảng AI cho từng phase).
+**Bài làm cá nhân:** Đào Đức Sơn — 2A202604105 (`B1rdal`)
 
-## Bắt buộc (chỉ có thế)
+Game mô phỏng một ngày của Út Sen: thu thập nguyên liệu dưới sông, phục vụ quán ăn và mua nâng cấp cho ngày kế tiếp. Bản triển khai dùng Python 3, không cần thư viện ngoài, có giao diện trình duyệt và chế độ headless tất định để chấm tự động.
 
-Cách làm việc kỹ thuật là **tự do** (push thẳng, nhánh + PR, pair, có hay không CI…). Cái bắt buộc:
+## Chạy nhanh
 
-1. **Một repo chung:** trưởng nhóm **fork** repo này, đặt tên `K5-L3B-LAB-Day12-AI-SDLC-<ten-nhom>`, thêm mọi thành viên làm collaborator (*Settings → Collaborators*, quyền Write) và để repo **public** (giảng viên xem được, không cần mời).
-2. **Cả nhóm cùng commit** bằng tài khoản GitHub của mình, mỗi người **≥ 3 commit có nội dung** (làm cặp thì ghi `Co-authored-by:`).
-3. **Điền [`TEAM.md`](TEAM.md):** danh sách thành viên + thỏa thuận làm việc nhóm; sửa `team_size` trong [`game.contract.json`](game.contract.json). Commit của người không có trong `TEAM.md` không được tính.
-4. **Gắn tag** `phase-1` … `phase-4` đúng hạn; chạy được tại từng tag.
-5. **Ghi chép tối thiểu:** `docs/verification/phase-n.md`, `docs/clarify.md`, `docs/ai-usage-log.md`, `docs/retro.md`, `docs/members/<handle>.md`.
-
-## Bắt đầu nhanh
+Yêu cầu: Python 3.12 trở lên.
 
 ```bash
-git clone <fork-của-nhóm> && cd <fork-của-nhóm>
-PYTHONPATH=tests:. python3 -m unittest discover -s tests -v        # smoke test
-python3 -m chonoi.live --mode gather                                # chơi thử trên trình duyệt (tùy chọn)
+python3 -m unittest discover -s tests -v
+python3 -m chonoi.live --mode day
+python3 -m chonoi.headless --mode day --seed 42 --days 1 --ticks 50000 --out day.jsonl
 ```
 
-Game cần chế độ **headless** theo Test Contract (`python3 -m chonoi.headless --mode gather|quan …`) để được chạy và chấm tự động. **Công nghệ không ràng buộc**: khung Python trong `chonoi/` chỉ là gợi ý, chi tiết ở [`docs/STARTER.md`](docs/STARTER.md).
+Mở địa chỉ được in sau lệnh `live`. Điều khiển: WASD hoặc phím mũi tên để di chuyển, `E` tương tác, `Space` bắt cá, `P`/`Esc` tạm dừng, `H` bật tương phản cao, `R` chơi lại. Trong shop, dùng phím số để mua nâng cấp và nút hoàn tất để sang ngày mới.
 
-## Tự do sáng tạo
+## Nội dung đã hoàn thành
 
-Ngoài phần đề yêu cầu, nhóm được **thêm** nhân vật, loài cá/cây, sinh vật, món, bản đồ, cơ chế, câu chuyện, đồ họa, âm nhạc… với ba điều kiện: **không phá phần cố định** (tắt ở headless), ghi mục **"Sáng tạo của nhóm"** trong README của nhóm, và **làm lõi đúng trước**.
+- Phase 1: CLI/headless tất định, movement, input, scenario, JSONL và inventory nguyên tử.
+- Phase 2: sáu loại nguyên liệu, cá di chuyển/sinh mới, cá sấu tuần tra–truy đuổi, hai bếp, bốn bàn, sáu món, kế hoạch D1–D5, shop và nâng cấp oxy/Máu.
+- Phase 3: từng vật phẩm có `id`, `kind`, `fresh`; độ tươi giảm theo phase, đồ hỏng dưới 30, giữ nguyên liệu theo ID và giá bán theo độ tươi trung bình.
+- Phase 4: pause, cảnh báo HUD, chế độ tương phản cao, benchmark 30 giây và soak 10 ngày.
 
-## Lịch 3 giờ
+Thông số chuẩn nằm trong [`game.contract.json`](game.contract.json). Mô tả lệnh và kiến trúc chi tiết nằm ở [`docs/STARTER.md`](docs/STARTER.md); ma trận kiểm chứng nằm trong `docs/verification/`.
 
-| Mốc | Phase | Hạn tag |
-|---|---|---|
-| 0:00 | Phase 1 (PRD-0) | `phase-1` trước 1:00 |
-| 1:00 | Phase 2 | `phase-2` trước 1:55 |
-| 1:55 | Phase 3 | `phase-3` trước 2:30 |
-| 2:30 | Phase 4 | `phase-4` + Release `v1.0.0` trước 3:00 |
+## Lệnh kiểm chứng
 
-Hết giờ mỗi phase thì gắn tag rồi đi tiếp; chỗ chưa xong ghi trung thực trong bằng chứng.
+```bash
+python3 -m unittest discover -s tests -v
+python3 -m chonoi.bench --seed 42 --duration 30 --out docs/proof/phase-4/bench.json
+python3 -m chonoi.soak --seed 42 --days 10 --out docs/proof/phase-4/soak.json
+```
 
-## Đánh giá (100 điểm)
+Kết quả hiện tại: 45/45 test đạt, benchmark trung bình 61 FPS, 1% low 58 FPS, soak hoàn thành 10/10 ngày và 0 crash.
 
-| Hạng mục | Điểm |
-|---|---|
-| Test tự động ẩn (headless, gồm kiểm tra lại phase trước) | 25 |
-| Làm việc nhóm (một repo chung, chia việc, tích hợp, đổi yêu cầu) | 25 |
-| Kiểm chứng & bằng chứng | 15 |
-| Harness AI (AGENTS.md, skill, nhật ký dùng AI) | 10 |
-| Đánh giá & retro | 10 |
-| Chất lượng sản phẩm (đúng yêu cầu, mở rộng/sáng tạo) | 10 |
-| Demo | 5 |
+## Giới hạn đã biết
 
-## Quy định
+- Bài được thực hiện bởi một người nên không đáp ứng tiêu chí hành chính 4–6 thành viên của đề gốc; không tạo thành viên hoặc lịch sử cộng tác giả.
+- `extensions` để trống; toàn bộ phần bắt buộc được ưu tiên.
+- Đồ họa dùng hình khối tự tạo trong trình duyệt, không dùng asset bên ngoài.
 
-- Dùng AI thoải mái; **không sao chép repo của nhóm khác**; bằng chứng phải thật.
-- Nhân vật, bối cảnh là bản gốc của lab; asset ngoài chỉ dùng CC0/CC-BY/MIT hoặc tự tạo, ghi nguồn trong `CREDITS.md`. Không commit API key, token, `.env`.
+## Hồ sơ
+
+[`TEAM.md`](TEAM.md) · [`CHANGELOG.md`](CHANGELOG.md) · [`CREDITS.md`](CREDITS.md) · [`docs/clarify.md`](docs/clarify.md) · [`docs/ai-usage-log.md`](docs/ai-usage-log.md) · [`docs/retro.md`](docs/retro.md) · [`docs/members/B1rdal.md`](docs/members/B1rdal.md)

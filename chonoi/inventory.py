@@ -1,61 +1,91 @@
-"""File kho v1.0 (Contract G): {"items": {id: số nguyên >= 0}}.
-
-Đọc: từ chối sai schema / id lạ / số âm (BadInput -> mã 2).
-Ghi: bỏ mục bằng 0, qua file tạm cùng thư mục rồi thay thế, byte-ổn-định.
-"""
+"""Kho cá thể v1.2+: ``{"items":[{"id","kind","fresh"}]}``."""
 
 import json
+import math
 import os
 import tempfile
 
 from .errors import BadInput
+from .ids import id_key
 
-KINDS_P1 = ("ca_loc", "ca_linh", "bong_dien_dien", "bong_sung")
+KINDS = ("ca_loc", "ca_linh", "ca_keo", "bong_dien_dien", "bong_sung", "keo_neo")
+KINDS_P1 = KINDS
 
 
-def validate_items(items, kinds=KINDS_P1):
-    if not isinstance(items, dict):
-        raise BadInput("items phải là object")
-    out = {}
-    for k, v in items.items():
-        if k not in kinds:
-            raise BadInput(f"nguyên liệu lạ: {k}")
-        if isinstance(v, bool) or not isinstance(v, int) or v < 0:
-            raise BadInput(f"số lượng không hợp lệ cho {k}: {v!r}")
-        if v > 0:
-            out[k] = v
+def validate_items(items, kinds=KINDS):
+    if not isinstance(items, list):
+        raise BadInput("items phải là mảng cá thể ở contract v1.2+")
+    out, seen = [], set()
+    for index, raw in enumerate(items):
+        if not isinstance(raw, dict) or set(raw) != {"id", "kind", "fresh"}:
+            raise BadInput(f"items[{index}] phải có đúng id, kind, fresh")
+        ident, kind, fresh = raw["id"], raw["kind"], raw["fresh"]
+        if not isinstance(ident, str) or not ident or ident in seen:
+            raise BadInput(f"id cá thể trống hoặc trùng: {ident!r}")
+        if kind not in kinds:
+            raise BadInput(f"nguyên liệu lạ: {kind}")
+        if isinstance(fresh, bool) or not isinstance(fresh, (int, float)) or not math.isfinite(fresh):
+            raise BadInput(f"độ tươi không hợp lệ cho {ident}")
+        if not 0 <= fresh <= 100:
+            raise BadInput(f"độ tươi ngoài [0,100] cho {ident}")
+        seen.add(ident)
+        out.append({"id": ident, "kind": kind, "fresh": float(fresh)})
     return out
 
 
-def read_inventory(path: str, kinds=KINDS_P1) -> dict:
+def read_inventory(path: str) -> list:
     try:
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
-    except (OSError, ValueError) as e:
-        raise BadInput(f"không đọc được file kho {path}: {e}")
-    if not isinstance(data, dict) or set(data.keys()) != {"items"}:
+    except (OSError, ValueError) as exc:
+        raise BadInput(f"không đọc được file kho {path}: {exc}")
+    if not isinstance(data, dict) or set(data) != {"items"}:
         raise BadInput("file kho chỉ được có khóa gốc 'items'")
-    return validate_items(data["items"], kinds)
+    return validate_items(data["items"])
+
+
+def inventory_payload(items: list) -> dict:
+    ordered = sorted((dict(item) for item in items), key=lambda item: id_key(item["id"]))
+    return {"items": ordered}
+
+
+def write_inventory(path: str, items: list):
+    payload = inventory_payload(validate_items(items))
+    directory = os.path.dirname(os.path.abspath(path))
+    fd, temporary = tempfile.mkstemp(prefix=".inv-", suffix=".tmp", dir=directory)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as stream:
+            json.dump(payload, stream, ensure_ascii=False, separators=(",", ":"))
+            stream.write("\n")
+        os.replace(temporary, path)
+    except BaseException:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+        raise
+
+
+def new_item(ids, kind: str, fresh: float = 100.0) -> dict:
+    return {"id": ids.new("I"), "kind": kind, "fresh": float(fresh)}
+
+
+def item_counts(items: list) -> dict:
+    counts = {}
+    for item in items:
+        counts[item["kind"]] = counts.get(item["kind"], 0) + 1
+    return {kind: counts[kind] for kind in sorted(counts)}
 
 
 def hold_to_items(hold: list) -> dict:
-    """Khoang (mảng id theo thứ tự nhặt) -> object đếm, sắp theo id nguyên liệu."""
-    counts = {}
-    for k in hold:
-        counts[k] = counts.get(k, 0) + 1
-    return {k: counts[k] for k in sorted(counts)}
+    """Compatibility name retained for callers; returns the v1.2 inventory envelope."""
+    return inventory_payload(hold)
 
 
-def write_inventory(path: str, items: dict):
-    items = {k: items[k] for k in sorted(items) if items[k] > 0}
-    d = os.path.dirname(os.path.abspath(path))
-    fd, tmp = tempfile.mkstemp(prefix=".inv-", suffix=".tmp", dir=d)
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as f:
-            json.dump({"items": items}, f, ensure_ascii=False, separators=(",", ":"))
-            f.write("\n")
-        os.replace(tmp, path)
-    except BaseException:
-        if os.path.exists(tmp):
-            os.unlink(tmp)
-        raise
+def decay_items(items: list, amount: float, spoiled_below: float, location: str):
+    events = []
+    for item in sorted(items, key=lambda value: id_key(value["id"])):
+        before = item["fresh"]
+        item["fresh"] = max(0.0, before - amount)
+        if before >= spoiled_below and item["fresh"] < spoiled_below:
+            events.append(("spoiled", {"item_id": item["id"], "kind": item["kind"],
+                                        "location": location}))
+    return events
