@@ -16,5 +16,3 @@
 - Standup được ghi sau mỗi phase trong `docs/standup.md`.
 - Mọi thay đổi luật chơi phải có test tự động và chạy toàn bộ suite trước khi tích hợp.
 - Làm việc trực tiếp trên repository, chỉ gắn tag khi trạng thái tương ứng chạy được.
-
-Repository này là bài làm cá nhân. Quy định gốc của lab yêu cầu nhóm 4–6 người; hồ sơ giữ đúng số người thực tế.

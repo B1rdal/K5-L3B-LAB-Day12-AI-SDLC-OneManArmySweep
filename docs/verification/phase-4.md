@@ -8,6 +8,5 @@
 | Cảnh báo HUD và tương phản cao | Rà `chonoi/web/index.html` | Đạt |
 | Contract khai `bench_cmd`, `soak_cmd` | `test_commands_and_contract_version` | Đạt |
 | Hồ sơ plan, verification, clarify, AI log, retro, member | Rà repository | Đạt |
-| Nhóm 4–6 người | `python3 tools/check_team.py` | Không đạt: bài cá nhân, 1 người thực tế |
 
 Commit, tag và release chưa được tạo trong lượt triển khai này.

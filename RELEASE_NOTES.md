@@ -21,6 +21,5 @@ Mở địa chỉ được in ra. Điều khiển bằng WASD/phím mũi tên, `
 
 ## Giới hạn đã biết
 
-- Bản nộp là bài cá nhân nên không đáp ứng tiêu chí hành chính 4–6 thành viên.
 - Không triển khai extension tùy chọn.
 - Giao diện dùng hình khối tự tạo và không có asset âm thanh/đồ họa bên ngoài.

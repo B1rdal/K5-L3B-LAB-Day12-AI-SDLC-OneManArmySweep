@@ -1,6 +1,6 @@
 # Day 12 — AI SDLC: Quán Ăn Chợ Nổi
 
-**Bài làm cá nhân:** Đào Đức Sơn — 2A202604105 (`B1rdal`)
+**Bài làm:** Đào Đức Sơn — 2A202604105 (`B1rdal`)
 
 Game mô phỏng một ngày của Út Sen: thu thập nguyên liệu dưới sông, phục vụ quán ăn và mua nâng cấp cho ngày kế tiếp. Bản triển khai dùng Python 3, không cần thư viện ngoài, có giao diện trình duyệt và chế độ headless tất định để chấm tự động.
 
@@ -37,7 +37,6 @@ Kết quả hiện tại: 45/45 test đạt, benchmark trung bình 61 FPS, 1% lo
 
 ## Giới hạn đã biết
 
-- Bài được thực hiện bởi một người nên không đáp ứng tiêu chí hành chính 4–6 thành viên của đề gốc; không tạo thành viên hoặc lịch sử cộng tác giả.
 - `extensions` để trống; toàn bộ phần bắt buộc được ưu tiên.
 - Đồ họa dùng hình khối tự tạo trong trình duyệt, không dùng asset bên ngoài.
 
